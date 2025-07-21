@@ -258,19 +258,18 @@
              * @returns {string} The formatted time string (e.g., "01:30:15").
              */
             function formatHoursToHHMMSS(totalHours) {
-                if (totalHours === null || isNaN(totalHours) || !isFinite(totalHours)) {
-                    return 'N/A';
-                }
-
-                const hours = Math.floor(totalHours);
-                const minutes = Math.floor((totalHours * 60) % 60);
-                const seconds = Math.floor((totalHours * 3600) % 60);
-
-                const pad = (num) => num.toString().padStart(2, '0');
-
-                return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-            }
-
+                            if (totalHours === null || isNaN(totalHours) || !isFinite(totalHours) || totalHours < 0) { // Added totalHours < 0 check
+                                return 'N/A';
+                            }
+            
+                            const hours = Math.floor(totalHours);
+                            const minutes = Math.floor((totalHours * 60) % 60);
+                            const seconds = Math.floor((totalHours * 3600) % 60);
+            
+                            const pad = (num) => num.toString().padStart(2, '0');
+            
+                            return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+                        }
             // Function to show custom modal
             function showCustomModal(message) {
                 modalMessage.textContent = message;
