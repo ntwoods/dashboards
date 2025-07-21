@@ -279,31 +279,32 @@
 
             // Function to fetch data from Google Apps Script
             async function fetchData() {
-                loadingIndicator.style.display = 'flex'; // Show loading
-                errorMessage.style.display = 'none'; // Hide any previous errors
-                dashboardContent.style.display = 'none'; // Hide content
-
-
+                loadingIndicator.style.display = 'flex';
+                errorMessage.style.display = 'none';
+                dashboardContent.style.display = 'none';
+            
                 try {
+                    console.log('Attempting to fetch from:', GOOGLE_APPS_SCRIPT_WEB_APP_URL);
                     const response = await fetch(GOOGLE_APPS_SCRIPT_WEB_APP_URL);
+                    console.log('Response received:', response);
                     if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        const errorBody = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
                     }
                     const data = await response.json();
-
+                    console.log('Fetched data:', data); // See if data is actually arriving
                     if (data.error) {
                         throw new Error(data.error);
                     }
-
-                    currentDashboardData = data; // Store fetched data
+                    currentDashboardData = data;
                     renderDashboard(data);
-                    dashboardContent.style.display = 'grid'; // Show content
+                    dashboardContent.style.display = 'grid';
                 } catch (error) {
                     console.error('Error fetching data:', error);
                     errorText.textContent = `Failed to load data: ${error.message}. Please ensure the Google Apps Script is deployed correctly and the URL is accurate.`;
-                    errorMessage.style.display = 'block'; // Show error
+                    errorMessage.style.display = 'block';
                 } finally {
-                    loadingIndicator.style.display = 'none'; // Hide loading
+                    loadingIndicator.style.display = 'none';
                 }
             }
 
