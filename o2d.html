@@ -195,7 +195,9 @@
     </div>
 
     <script>
-        // IMPORTANT: Replace this with the Web App URL you get after deploying code.gs
+        // IMPORTANT: YOU MUST REPLACE THIS PLACEHOLDER WITH YOUR ACTUAL GOOGLE APPS SCRIPT WEB APP URL
+        // AFTER YOU HAVE DEPLOYED YOUR 'code.gs' SCRIPT AS A WEB APP.
+        // Example: const GOOGLE_APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz123ABC_your_unique_id_here_XYZ/exec';
         const GOOGLE_APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyb8vcHXb03SAJOq6Ib03u7yGecxbbT2qTXTmCXvv_ATg4f5Pn8IzBT__Afv12Nxi8pYg/exec';
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -245,10 +247,11 @@
                 errorMessage.style.display = 'none'; // Hide any previous errors
                 dashboardContent.style.display = 'none'; // Hide content
 
+                // This check ensures the user has replaced the placeholder URL
                 if (GOOGLE_APPS_SCRIPT_WEB_APP_URL === 'https://script.google.com/macros/s/AKfycbyb8vcHXb03SAJOq6Ib03u7yGecxbbT2qTXTmCXvv_ATg4f5Pn8IzBT__Afv12Nxi8pYg/exec') {
                     loadingIndicator.style.display = 'none';
                     showCustomModal("Please replace 'YOUR_DEPLOYED_WEB_APP_URL_HERE' in the JavaScript code with your actual Google Apps Script Web App URL after deployment.");
-                    return;
+                    return; // Stop execution if URL is not set
                 }
 
                 try {
