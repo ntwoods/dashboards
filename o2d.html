@@ -168,7 +168,7 @@
                         <thead class="bg-blue-50">
                             <tr>
                                 <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Order ID</th>
-                                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Total Time (Hours)</th>
+                                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Total Time</th>
                                 <!-- Dynamic headers for stages will be added by JS -->
                             </tr>
                         </thead>
@@ -196,7 +196,7 @@
 
     <script>
         // IMPORTANT: Replace this with the Web App URL you get after deploying code.gs
-        const GOOGLE_APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxZiJZ8SAAdN_KwLKfNOIukL2itbBN11aSnLAD5A_6JRNelK99WPQyq4WsJV8o-Kn_LAA/exec';
+        const GOOGLE_APPS_SCRIPT_WEB_APP_URL = 'YOUR_DEPLOYED_WEB_APP_URL_HERE';
 
         document.addEventListener('DOMContentLoaded', () => {
             const loadingIndicator = document.getElementById('loadingIndicator');
@@ -213,6 +213,25 @@
             const toggleDetailsBtn = document.getElementById('toggleDetailsBtn');
             const customModal = document.getElementById('customModal');
             const modalMessage = document.getElementById('modalMessage');
+
+            /**
+             * Helper function to format hours (float) into HH:MM:SS format.
+             * @param {number} totalHours The total hours as a float.
+             * @returns {string} The formatted time string (e.g., "01:30:15").
+             */
+            function formatHoursToHHMMSS(totalHours) {
+                if (totalHours === null || isNaN(totalHours)) {
+                    return 'N/A';
+                }
+
+                const hours = Math.floor(totalHours);
+                const minutes = Math.floor((totalHours * 60) % 60);
+                const seconds = Math.floor((totalHours * 3600) % 60);
+
+                const pad = (num) => num.toString().padStart(2, '0');
+
+                return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+            }
 
             // Function to show custom modal
             function showCustomModal(message) {
@@ -258,17 +277,15 @@
             function renderDashboard(data) {
                 // Overall Summary
                 if (data.overallAverageTotalTime !== null) {
-                    overallAvgTime.textContent = `${data.overallAverageTotalTime} hours`;
+                    overallAvgTime.textContent = formatHoursToHHMMSS(data.overallAverageTotalTime);
                 } else {
                     overallAvgTime.textContent = 'N/A';
                 }
 
-
                 // Quickest Stage
                 if (data.quickestStage && data.quickestStage.name) {
                     quickestStageName.textContent = data.quickestStage.name;
-                    // Round the time to 2 decimal places for display
-                    quickestStageTime.textContent = `${data.quickestStage.time.toFixed(2)} hours`;
+                    quickestStageTime.textContent = formatHoursToHHMMSS(data.quickestStage.time);
                 } else {
                     quickestStageName.textContent = 'N/A';
                     quickestStageTime.textContent = 'N/A';
@@ -277,8 +294,7 @@
                 // Laziest Stage
                 if (data.laziestStage && data.laziestStage.name) {
                     laziestStageName.textContent = data.laziestStage.name;
-                    // Round the time to 2 decimal places for display
-                    laziestStageTime.textContent = `${data.laziestStage.time.toFixed(2)} hours`;
+                    laziestStageTime.textContent = formatHoursToHHMMSS(data.laziestStage.time);
                 } else {
                     laziestStageName.textContent = 'N/A';
                     laziestStageTime.textContent = 'N/A';
@@ -306,7 +322,7 @@
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: 'Average Time (Hours)',
+                            label: 'Average Time',
                             data: values,
                             backgroundColor: [
                                 '#60a5fa', // blue-400
@@ -340,7 +356,8 @@
                             tooltip: {
                                 callbacks: {
                                     label: function(context) {
-                                        return `${context.dataset.label}: ${context.parsed.y} hours`;
+                                        // Format tooltip label to HH:MM:SS
+                                        return `${context.dataset.label}: ${formatHoursToHHMMSS(context.parsed.y)}`;
                                     }
                                 }
                             }
@@ -350,11 +367,16 @@
                                 beginAtZero: true,
                                 title: {
                                     display: true,
-                                    text: 'Average Time (Hours)',
+                                    text: 'Average Time (Hours)', // Keep label as hours for scale
                                     color: '#4a5568'
                                 },
                                 ticks: {
-                                    color: '#4a5568'
+                                    color: '#4a5568',
+                                    // Format y-axis ticks to HH:MM:SS if desired, or keep as hours for scale clarity
+                                    // For now, keeping as hours for chart scale interpretation
+                                    callback: function(value, index, ticks) {
+                                        return value; // Display raw hours on the axis for better scale understanding
+                                    }
                                 },
                                 grid: {
                                     color: '#e2e8f0'
@@ -399,7 +421,7 @@
                 stageNames.forEach(stageName => {
                     const th = document.createElement('th');
                     th.className = 'py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider';
-                    th.textContent = `${stageName} (Hours)`;
+                    th.textContent = `${stageName}`; // Removed "(Hours)" from header
                     headerRow.appendChild(th);
                 });
 
@@ -416,7 +438,7 @@
                     // Total Time
                     let totalTimeCell = document.createElement('td');
                     totalTimeCell.className = 'py-3 px-4 text-sm text-gray-700';
-                    totalTimeCell.textContent = order.totalProcessingTimeHours !== null ? `${order.totalProcessingTimeHours.toFixed(2)}` : 'N/A';
+                    totalTimeCell.textContent = formatHoursToHHMMSS(order.totalProcessingTimeHours);
                     row.appendChild(totalTimeCell);
 
                     // Stage Times
@@ -424,7 +446,7 @@
                         let stageTimeCell = document.createElement('td');
                         stageTimeCell.className = 'py-3 px-4 text-sm text-gray-700';
                         const time = order.stageTimes[stageName];
-                        stageTimeCell.textContent = time !== null ? `${time.toFixed(2)}` : 'N/A';
+                        stageTimeCell.textContent = formatHoursToHHMMSS(time);
                         row.appendChild(stageTimeCell);
                     });
 
