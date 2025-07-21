@@ -3,473 +3,563 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Cycle Analytics Dashboard</title>
+    <title>Order Cycle Dashboard</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js CDN for powerful charting -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f8ff; /* Lightest blue/off-white */
-            color: #1a202c; /* Dark text for contrast */
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
         }
         .card {
             background-color: #ffffff;
-            border-radius: 1rem; /* More rounded corners */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
             padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            transition: transform 0.2s ease-in-out;
         }
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        .gradient-blue {
-            background: linear-gradient(to right, #60a5fa, #3b82f6); /* Shades of blue gradient */
-            color: white;
-        }
-        .text-blue-600 { /* Custom color for primary text */
-            color: #2563eb;
-        }
-        .bg-blue-50 { /* Light background for highlights */
-            background-color: #eff6ff;
-        }
-        .btn-primary {
-            @apply bg-blue-600 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:bg-blue-700 transition duration-300 ease-in-out;
-        }
-        .loading-spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #3b82f6;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1000; /* Sit on top */
-            left: 0;
-            top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: auto;
-            padding: 20px;
-            border-radius: 1rem;
-            width: 80%;
-            max-width: 900px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        .chart-container {
             position: relative;
+            height: 400px; /* Fixed height for charts */
+            width: 100%;
         }
-        .close-button {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
+        /* Custom scrollbar for table */
+        .table-container::-webkit-scrollbar {
+            height: 8px;
         }
-        .close-button:hover,
-        .close-button:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
+        .table-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        /* Message box styling */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+            text-align: center;
+            max-width: 90%;
+            border: 1px solid #e2e8f0;
+        }
+        .message-box-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
         }
     </style>
 </head>
-<body class="p-4 sm:p-6 md:p-8 lg:p-10">
-
-    <div class="max-w-7xl mx-auto">
-        <!-- Header Section -->
-        <header class="text-center mb-10">
-            <h1 class="text-5xl font-extrabold text-blue-600 mb-4">
-                <i class="fas fa-chart-line mr-3"></i>Order Cycle Analytics
-            </h1>
-            <p class="text-lg text-gray-600">Gain powerful insights into your order processing efficiency.</p>
-        </header>
+<body class="bg-gray-100 text-gray-800">
+    <div class="container py-8">
+        <h1 class="text-4xl font-bold text-center text-indigo-700 mb-8">Order Cycle Performance Dashboard</h1>
 
         <!-- Loading Indicator -->
-        <div id="loadingIndicator" class="flex justify-center items-center h-64" style="display: none;">
-            <div class="loading-spinner"></div>
-            <p class="ml-4 text-blue-600 text-lg font-medium">Loading data, please wait...</p>
-        </div>
-
-        <!-- Error Message -->
-        <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative" role="alert">
-            <strong class="font-bold">Error!</strong>
-            <span class="block sm:inline" id="errorText">Something went wrong while fetching data. Please check the Google Apps Script deployment URL and permissions.</span>
-            <span class="absolute top-0 bottom-0 right-0 px-4 py-3">
-                <svg class="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" onclick="document.getElementById('errorMessage').classList.add('hidden');"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
-            </span>
-        </div>
-
-        <!-- Dashboard Content -->
-        <div id="dashboardContent" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style="display: none;">
-
-            <!-- Overall Summary Card -->
-            <div class="card gradient-blue text-white col-span-1 md:col-span-2 lg:col-span-1 flex flex-col justify-between">
-                <div>
-                    <h2 class="text-2xl font-bold mb-3"><i class="fas fa-hourglass-half mr-2"></i>Overall Performance</h2>
-                    <p class="text-lg mb-2">Average Total Order Processing Time:</p>
-                    <p id="overallAvgTime" class="text-5xl font-extrabold mb-4"></p>
-                </div>
-                <div class="text-sm opacity-90">
-                    <p>This is the average time from 'Order Placed on Portal' to 'Goods Delivered to Party'.</p>
-                </div>
-            </div>
-
-            <!-- Quickest Stage Card -->
-            <div class="card bg-blue-50">
-                <h2 class="text-2xl font-bold text-blue-600 mb-3"><i class="fas fa-rocket mr-2"></i>Quickest Stage</h2>
-                <p class="text-lg text-gray-700 mb-2">Stage Name:</p>
-                <p id="quickestStageName" class="text-3xl font-bold text-green-600 mb-4"></p>
-                <p class="text-lg text-gray-700 mb-2">Average Time:</p>
-                <p id="quickestStageTime" class="text-3xl font-bold text-green-600"></p>
-            </div>
-
-            <!-- Laziest Stage Card -->
-            <div class="card bg-blue-50">
-                <h2 class="text-2xl font-bold text-blue-600 mb-3"><i class="fas fa-bed mr-2"></i>Laziest Stage</h2>
-                <p class="text-lg text-gray-700 mb-2">Stage Name:</p>
-                <p id="laziestStageName" class="text-3xl font-bold text-red-600 mb-4"></p>
-                <p class="text-lg text-gray-700 mb-2">Average Time:</p>
-                <p id="laziestStageTime" class="text-3xl font-bold text-red-600"></p>
-            </div>
-
-            <!-- Average Stage Times Chart -->
-            <div class="card col-span-full">
-                <h2 class="text-2xl font-bold text-blue-600 mb-4"><i class="fas fa-chart-bar mr-2"></i>Average Time Per Stage (Hours)</h2>
-                <div class="relative h-96">
-                    <canvas id="averageStageChart"></canvas>
-                </div>
-            </div>
-
-            <!-- Detailed Order Data Table -->
-            <div class="card col-span-full">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold text-blue-600"><i class="fas fa-table mr-2"></i>Detailed Order Data</h2>
-                    <button id="toggleDetailsBtn" class="btn-primary">Show Details</button>
-                </div>
-                <div id="detailedDataTableContainer" class="overflow-x-auto" style="display: none;">
-                    <table class="min-w-full bg-white border border-gray-200 rounded-lg">
-                        <thead class="bg-blue-50">
-                            <tr>
-                                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Order ID</th>
-                                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Total Time</th>
-                                <!-- Dynamic headers for stages will be added by JS -->
-                            </tr>
-                        </thead>
-                        <tbody id="detailedDataTableBody" class="divide-y divide-gray-200">
-                            <!-- Data rows will be populated by JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- Modal for showing error messages -->
-    <div id="customModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" onclick="document.getElementById('customModal').style.display='none';">&times;</span>
-            <h3 class="text-2xl font-bold text-red-600 mb-4"><i class="fas fa-exclamation-triangle mr-2"></i>Error</h3>
-            <p id="modalMessage" class="text-gray-700 text-lg"></p>
-            <div class="mt-6 text-right">
-                <button class="btn-primary" onclick="document.getElementById('customModal').style.display='none';">Close</button>
+        <div id="loading-indicator" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50">
+            <div class="bg-white p-6 rounded-lg shadow-lg flex items-center space-x-3">
+                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                <p class="text-lg text-indigo-700 font-medium">Loading data...</p>
             </div>
         </div>
+
+        <!-- Message Box Container -->
+        <div id="message-box-container"></div>
+
+        <!-- Summary Statistics Cards -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Average Stage Durations</h2>
+            <div id="summary-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Cards will be injected here by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Filters Section -->
+        <section class="mb-8 p-6 card">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Filters & Actions</h2>
+            <div class="flex flex-wrap items-center gap-4">
+                <div class="flex flex-col flex-grow">
+                    <label for="startDate" class="text-sm font-medium text-gray-600 mb-1">Start Date:</label>
+                    <input type="date" id="startDate" class="p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div class="flex flex-col flex-grow">
+                    <label for="endDate" class="text-sm font-medium text-gray-600 mb-1">End Date:</label>
+                    <input type="date" id="endDate" class="p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <button id="applyFilters" class="mt-auto px-6 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200 ease-in-out">Apply Filters</button>
+                <button id="resetFilters" class="mt-auto px-6 py-2 bg-gray-300 text-gray-800 font-semibold rounded-md shadow-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition duration-200 ease-in-out">Reset Filters</button>
+                <button id="exportCsv" class="mt-auto px-6 py-2 bg-green-600 text-white font-semibold rounded-md shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-200 ease-in-out">Export to CSV</button>
+            </div>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="mb-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="card chart-container">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Order-wise Stage Durations (Line Chart)</h2>
+                <canvas id="lineChart"></canvas>
+            </div>
+            <div class="card chart-container">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Order-wise Stage Durations (Bar Chart)</h2>
+                <canvas id="barChart"></canvas>
+            </div>
+        </section>
+
+        <!-- Per-Order Breakdown Table -->
+        <section class="mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Per-Order Breakdown</h2>
+            <div class="card overflow-x-auto table-container">
+                <table id="order-table" class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Timestamp</th>
+                            <!-- Dynamic headers for stages -->
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <!-- Table rows will be injected here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
 
     <script>
-        // IMPORTANT: YOU MUST REPLACE THIS PLACEHOLDER WITH YOUR ACTUAL GOOGLE APPS SCRIPT WEB APP URL
-        // AFTER YOU HAVE DEPLOYED YOUR 'code.gs' SCRIPT AS A WEB APP.
-        // Example: const GOOGLE_APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz123ABC_your_unique_id_here_XYZ/exec';
-        const GOOGLE_APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyb8vcHXb03SAJOq6Ib03u7yGecxbbT2qTXTmCXvv_ATg4f5Pn8IzBT__Afv12Nxi8pYg/exec';
+        // IMPORTANT: Replace this with your deployed Google Apps Script Web App URL
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0DIhLjrD-iNreDr3d8OKx1KH9FTcMaAcRXOdgWUnhq3_WdkrHvHmN_aDRdHOs39RpoQ/exec';
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            const errorMessage = document.getElementById('errorMessage');
-            const errorText = document.getElementById('errorText');
-            const dashboardContent = document.getElementById('dashboardContent');
-            const overallAvgTime = document.getElementById('overallAvgTime');
-            const quickestStageName = document.getElementById('quickestStageName');
-            const quickestStageTime = document.getElementById('quickestStageTime');
-            const laziestStageName = document.getElementById('laziestStageName');
-            const laziestStageTime = document.getElementById('laziestStageTime');
-            const detailedDataTableContainer = document.getElementById('detailedDataTableContainer');
-            const detailedDataTableBody = document.getElementById('detailedDataTableBody');
-            const toggleDetailsBtn = document.getElementById('toggleDetailsBtn');
-            const customModal = document.getElementById('customModal');
-            const modalMessage = document.getElementById('modalMessage');
+        let allOrderData = []; // Stores the raw data from the API
+        let filteredOrderData = []; // Stores data after applying filters
 
-            /**
-             * Helper function to format hours (float) into HH:MM:SS format.
-             * @param {number} totalHours The total hours as a float.
-             * @returns {string} The formatted time string (e.g., "01:30:15").
-             */
-            function formatHoursToHHMMSS(totalHours) {
-                if (totalHours === null || isNaN(totalHours)) {
-                    return 'N/A';
-                }
+        // Chart instances
+        let lineChartInstance;
+        let barChartInstance;
 
-                const hours = Math.floor(totalHours);
-                const minutes = Math.floor((totalHours * 60) % 60);
-                const seconds = Math.floor((totalHours * 3600) % 60);
-
-                const pad = (num) => num.toString().padStart(2, '0');
-
-                return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        // Utility function to show a custom message box instead of alert()
+        function showMessageBox(message, type = 'info') {
+            const container = document.getElementById('message-box-container');
+            // Remove existing message box if any
+            if (container.firstChild) {
+                container.innerHTML = '';
             }
 
-            // Function to show custom modal
-            function showCustomModal(message) {
-                modalMessage.textContent = message;
-                customModal.style.display = 'flex';
+            const overlay = document.createElement('div');
+            overlay.className = 'message-box-overlay';
+            overlay.onclick = () => hideMessageBox(); // Click outside to close
+
+            const messageBox = document.createElement('div');
+            messageBox.className = 'message-box';
+            
+            let borderColor = 'border-gray-300';
+            let textColor = 'text-gray-800';
+            let buttonBg = 'bg-indigo-600 hover:bg-indigo-700';
+
+            if (type === 'error') {
+                borderColor = 'border-red-500';
+                textColor = 'text-red-700';
+                buttonBg = 'bg-red-600 hover:bg-red-700';
+            } else if (type === 'success') {
+                borderColor = 'border-green-500';
+                textColor = 'text-green-700';
+                buttonBg = 'bg-green-600 hover:bg-green-700';
             }
 
-            // Function to fetch data from Google Apps Script
-            async function fetchData() {
-                loadingIndicator.style.display = 'flex'; // Show loading
-                errorMessage.style.display = 'none'; // Hide any previous errors
-                dashboardContent.style.display = 'none'; // Hide content
+            messageBox.innerHTML = `
+                <p class="text-lg font-medium mb-4 ${textColor}">${message}</p>
+                <button class="px-4 py-2 ${buttonBg} text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${type === 'error' ? 'focus:ring-red-500' : 'focus:ring-indigo-500'}">OK</button>
+            `;
+            messageBox.classList.add(borderColor);
 
-                // This check ensures the user has replaced the placeholder URL
-                if (GOOGLE_APPS_SCRIPT_WEB_APP_URL === 'https://script.google.com/macros/s/AKfycbyb8vcHXb03SAJOq6Ib03u7yGecxbbT2qTXTmCXvv_ATg4f5Pn8IzBT__Afv12Nxi8pYg/exec') {
-                    loadingIndicator.style.display = 'none';
-                    showCustomModal("Please replace 'YOUR_DEPLOYED_WEB_APP_URL_HERE' in the JavaScript code with your actual Google Apps Script Web App URL after deployment.");
-                    return; // Stop execution if URL is not set
+            messageBox.querySelector('button').onclick = () => hideMessageBox();
+
+            container.appendChild(overlay);
+            container.appendChild(messageBox);
+        }
+
+        // Utility function to hide the custom message box
+        function hideMessageBox() {
+            const container = document.getElementById('message-box-container');
+            container.innerHTML = '';
+        }
+
+        // Function to show loading indicator
+        function showLoading() {
+            document.getElementById('loading-indicator').classList.remove('hidden');
+        }
+
+        // Function to hide loading indicator
+        function hideLoading() {
+            document.getElementById('loading-indicator').classList.add('hidden');
+        }
+
+        // Helper to convert HH:MM:SS to milliseconds
+        function hmsToMs(hms) {
+            if (hms === 'N/A' || !hms) return NaN;
+            const parts = hms.split(':').map(Number);
+            if (parts.length !== 3 || parts.some(isNaN)) return NaN;
+            return (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000;
+        }
+
+        // Helper to convert milliseconds to seconds for chart scaling
+        function msToSeconds(ms) {
+            return ms / 1000;
+        }
+
+        // Function to fetch data from Apps Script
+        async function fetchData() {
+            showLoading();
+            try {
+                const response = await fetch(APPS_SCRIPT_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-
-                try {
-                    const response = await fetch(GOOGLE_APPS_SCRIPT_WEB_APP_URL);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const data = await response.json();
-
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-
-                    renderDashboard(data);
-                    dashboardContent.style.display = 'grid'; // Show content
-                } catch (error) {
-                    console.error('Error fetching data:', error);
-                    errorText.textContent = `Failed to load data: ${error.message}. Please ensure the Google Apps Script is deployed correctly and the URL is accurate.`;
-                    errorMessage.style.display = 'block'; // Show error
-                } finally {
-                    loadingIndicator.style.display = 'none'; // Hide loading
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error);
                 }
+                allOrderData = data;
+                filteredOrderData = data; // Initially, filtered data is all data
+                renderDashboard();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                showMessageBox(`Failed to load data: ${error.message}. Please ensure the Apps Script URL is correct and deployed with 'Anyone' access.`, 'error');
+            } finally {
+                hideLoading();
             }
+        }
 
-            // Function to render the dashboard with fetched data
-            function renderDashboard(data) {
-                // Overall Summary
-                if (data.overallAverageTotalTime !== null) {
-                    overallAvgTime.textContent = formatHoursToHHMMSS(data.overallAverageTotalTime);
-                } else {
-                    overallAvgTime.textContent = 'N/A';
-                }
+        // Function to render summary cards
+        function renderSummaryCards(summaryStats) {
+            const summaryCardsContainer = document.getElementById('summary-cards');
+            summaryCardsContainer.innerHTML = ''; // Clear previous cards
 
-                // Quickest Stage
-                if (data.quickestStage && data.quickestStage.name) {
-                    quickestStageName.textContent = data.quickestStage.name;
-                    quickestStageTime.textContent = formatHoursToHHMMSS(data.quickestStage.time);
-                } else {
-                    quickestStageName.textContent = 'N/A';
-                    quickestStageTime.textContent = 'N/A';
-                }
+            const stageNames = Object.keys(summaryStats);
+            stageNames.forEach(stageName => {
+                const stats = summaryStats[stageName];
+                const card = document.createElement('div');
+                card.className = 'card flex flex-col items-center justify-center p-4 text-center bg-gradient-to-br from-indigo-50 to-indigo-100';
+                card.innerHTML = `
+                    <h3 class="text-md font-semibold text-indigo-700 mb-2">${stageName.replace(/_/g, ' to ').toUpperCase()}</h3>
+                    <div class="text-3xl font-bold text-indigo-900">${stats.average}</div>
+                    <div class="text-sm text-gray-600 mt-2">
+                        <p>Min: ${stats.min}</p>
+                        <p>Max: ${stats.max}</p>
+                        <p>Median: ${stats.median}</p>
+                    </div>
+                `;
+                summaryCardsContainer.appendChild(card);
+            });
+        }
 
-                // Laziest Stage
-                if (data.laziestStage && data.laziestStage.name) {
-                    laziestStageName.textContent = data.laziestStage.name;
-                    laziestStageTime.textContent = formatHoursToHHMMSS(data.laziestStage.time);
-                } else {
-                    laziestStageName.textContent = 'N/A';
-                    laziestStageTime.textContent = 'N/A';
-                }
+        // Function to render charts
+        function renderCharts(orderWiseDurations) {
+            const ctxLine = document.getElementById('lineChart').getContext('2d');
+            const ctxBar = document.getElementById('barChart').getContext('2d');
 
-                // Average Stage Times Chart
-                renderAverageStageChart(data.averageStageTimes);
+            // Destroy existing chart instances if they exist
+            if (lineChartInstance) lineChartInstance.destroy();
+            if (barChartInstance) barChartInstance.destroy();
 
-                // Detailed Order Data Table
-                renderDetailedDataTable(data.individualOrderData);
-            }
+            const labels = orderWiseDurations.map(order => order.orderTimestamp || 'N/A');
+            const stageKeys = Object.keys(orderWiseDurations[0] || {}).filter(key => key !== 'orderTimestamp');
 
-            // Function to render the Chart.js bar chart
-            function renderAverageStageChart(averageStageTimes) {
-                const ctx = document.getElementById('averageStageChart').getContext('2d');
-                const labels = Object.keys(averageStageTimes).filter(key => averageStageTimes[key] !== null);
-                const values = labels.map(key => averageStageTimes[key]);
+            const datasets = stageKeys.map((stageKey, index) => {
+                // Generate a consistent but distinct color for each stage
+                const hue = (index * 137 + 50) % 360; // Use a prime number for better distribution
+                const color = `hsl(${hue}, 70%, 60%)`;
+                const borderColor = `hsl(${hue}, 70%, 50%)`;
 
-                if (window.averageStageChartInstance) {
-                    window.averageStageChartInstance.destroy(); // Destroy previous chart instance
-                }
+                return {
+                    label: stageKey.replace(/_/g, ' to ').toUpperCase(),
+                    data: orderWiseDurations.map(order => msToSeconds(hmsToMs(order[stageKey]))),
+                    borderColor: borderColor,
+                    backgroundColor: color,
+                    fill: false,
+                    tension: 0.3,
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointBackgroundColor: borderColor
+                };
+            });
 
-                window.averageStageChartInstance = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Average Time',
-                            data: values,
-                            backgroundColor: [
-                                '#60a5fa', // blue-400
-                                '#3b82f6', // blue-500
-                                '#2563eb', // blue-600
-                                '#1d4ed8', // blue-700
-                                '#1e40af', // blue-800
-                                '#1e3a8a', // blue-900
-                                '#172554'  // blue-950
-                            ],
-                            borderColor: [
-                                '#3b82f6',
-                                '#2563eb',
-                                '#1d4ed8',
-                                '#1e40af',
-                                '#1e3a8a',
-                                '#172554',
-                                '#0f172a'
-                            ],
-                            borderWidth: 1,
-                            borderRadius: 8, // Rounded bars
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false,
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        // Format tooltip label to HH:MM:SS
-                                        return `${context.dataset.label}: ${formatHoursToHHMMSS(context.parsed.y)}`;
-                                    }
+            // Line Chart
+            lineChartInstance = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: false,
+                            text: 'Order-wise Stage Durations'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const valueInSeconds = context.raw;
+                                    const hours = Math.floor(valueInSeconds / 3600);
+                                    const minutes = Math.floor((valueInSeconds % 3600) / 60);
+                                    const seconds = Math.floor(valueInSeconds % 60);
+                                    const formatted = [hours, minutes, seconds]
+                                        .map(unit => String(unit).padStart(2, '0'))
+                                        .join(':');
+                                    return `${context.dataset.label}: ${formatted}`;
                                 }
                             }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Order Timestamp'
+                            }
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'Average Time (Hours)', // Keep label as hours for scale
-                                    color: '#4a5568'
-                                },
-                                ticks: {
-                                    color: '#4a5568',
-                                    // Format y-axis ticks to HH:MM:SS if desired, or keep as hours for scale clarity
-                                    // For now, keeping as hours for chart scale interpretation
-                                    callback: function(value, index, ticks) {
-                                        return value; // Display raw hours on the axis for better scale understanding
-                                    }
-                                },
-                                grid: {
-                                    color: '#e2e8f0'
-                                }
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Duration (Seconds)'
                             },
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Order Processing Stage',
-                                    color: '#4a5568'
-                                },
-                                ticks: {
-                                    color: '#4a5568',
-                                    autoSkip: false,
-                                    maxRotation: 45,
-                                    minRotation: 45
-                                },
-                                grid: {
-                                    display: false
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    // Convert seconds back to HH:MM:SS for Y-axis labels
+                                    const hours = Math.floor(value / 3600);
+                                    const minutes = Math.floor((value % 3600) / 60);
+                                    const seconds = Math.floor(value % 60);
+                                    return [hours, minutes, seconds]
+                                        .map(unit => String(unit).padStart(2, '0'))
+                                        .join(':');
                                 }
                             }
                         }
                     }
-                });
-            }
-
-            // Function to render the detailed order data table
-            function renderDetailedDataTable(individualOrderData) {
-                detailedDataTableBody.innerHTML = ''; // Clear previous data
-
-                if (individualOrderData.length === 0) {
-                    detailedDataTableBody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-gray-500">No detailed order data available.</td></tr>';
-                    return;
-                }
-
-                // Create dynamic headers for stage times
-                const headerRow = document.querySelector('#detailedDataTableContainer thead tr');
-                // Clear existing dynamic headers (keep Order ID and Total Time)
-                Array.from(headerRow.children).slice(2).forEach(child => child.remove());
-
-                const stageNames = Object.keys(individualOrderData[0].stageTimes);
-                stageNames.forEach(stageName => {
-                    const th = document.createElement('th');
-                    th.className = 'py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider';
-                    th.textContent = `${stageName}`; // Removed "(Hours)" from header
-                    headerRow.appendChild(th);
-                });
-
-                individualOrderData.forEach(order => {
-                    const row = document.createElement('tr');
-                    row.className = 'hover:bg-blue-50';
-
-                    // Order ID
-                    let orderIdCell = document.createElement('td');
-                    orderIdCell.className = 'py-3 px-4 text-sm text-gray-700 font-medium';
-                    orderIdCell.textContent = order.orderId;
-                    row.appendChild(orderIdCell);
-
-                    // Total Time
-                    let totalTimeCell = document.createElement('td');
-                    totalTimeCell.className = 'py-3 px-4 text-sm text-gray-700';
-                    totalTimeCell.textContent = formatHoursToHHMMSS(order.totalProcessingTimeHours);
-                    row.appendChild(totalTimeCell);
-
-                    // Stage Times
-                    stageNames.forEach(stageName => {
-                        let stageTimeCell = document.createElement('td');
-                        stageTimeCell.className = 'py-3 px-4 text-sm text-gray-700';
-                        const time = order.stageTimes[stageName];
-                        stageTimeCell.textContent = formatHoursToHHMMSS(time);
-                        row.appendChild(stageTimeCell);
-                    });
-
-                    detailedDataTableBody.appendChild(row);
-                });
-            }
-
-            // Toggle detailed table visibility
-            toggleDetailsBtn.addEventListener('click', () => {
-                if (detailedDataTableContainer.style.display === 'none') {
-                    detailedDataTableContainer.style.display = 'block';
-                    toggleDetailsBtn.textContent = 'Hide Details';
-                } else {
-                    detailedDataTableContainer.style.display = 'none';
-                    toggleDetailsBtn.textContent = 'Show Details';
                 }
             });
 
-            // Initial data fetch
-            fetchData();
+            // Bar Chart
+            barChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: datasets.map(dataset => ({
+                        ...dataset,
+                        fill: true, // Bars should be filled
+                        type: 'bar' // Ensure type is bar for this chart
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: false,
+                            text: 'Order-wise Stage Durations'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const valueInSeconds = context.raw;
+                                    const hours = Math.floor(valueInSeconds / 3600);
+                                    const minutes = Math.floor((valueInSeconds % 3600) / 60);
+                                    const seconds = Math.floor(valueInSeconds % 60);
+                                    const formatted = [hours, minutes, seconds]
+                                        .map(unit => String(unit).padStart(2, '0'))
+                                        .join(':');
+                                    return `${context.dataset.label}: ${formatted}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Order Timestamp'
+                            },
+                            stacked: true // Stack bars if you want to see total duration per order
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Duration (Seconds)'
+                            },
+                            beginAtZero: true,
+                            stacked: true, // Stack bars if you want to see total duration per order
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    const hours = Math.floor(value / 3600);
+                                    const minutes = Math.floor((value % 3600) / 60);
+                                    const seconds = Math.floor(value % 60);
+                                    return [hours, minutes, seconds]
+                                        .map(unit => String(unit).padStart(2, '0'))
+                                        .join(':');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Function to render the table
+        function renderTable(orderWiseDurations) {
+            const tableHead = document.querySelector('#order-table thead tr');
+            const tableBody = document.querySelector('#order-table tbody');
+
+            // Clear previous content
+            tableHead.innerHTML = '<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Timestamp</th>';
+            tableBody.innerHTML = '';
+
+            if (orderWiseDurations.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="8" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">No data available for the selected range.</td></tr>';
+                return;
+            }
+
+            // Determine dynamic headers from the first order's keys (excluding orderTimestamp)
+            const stageKeys = Object.keys(orderWiseDurations[0]).filter(key => key !== 'orderTimestamp');
+            stageKeys.forEach(key => {
+                const th = document.createElement('th');
+                th.scope = 'col';
+                th.className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+                th.textContent = key.replace(/_/g, ' to ').toUpperCase();
+                tableHead.appendChild(th);
+            });
+
+            // Populate table rows
+            orderWiseDurations.forEach(order => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+
+                const timestampCell = document.createElement('td');
+                timestampCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900';
+                timestampCell.textContent = order.orderTimestamp || 'N/A';
+                row.appendChild(timestampCell);
+
+                stageKeys.forEach(key => {
+                    const cell = document.createElement('td');
+                    cell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-500';
+                    cell.textContent = order[key] || 'N/A';
+                    row.appendChild(cell);
+                });
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Main render function to update all components
+        function renderDashboard() {
+            if (!filteredOrderData || !filteredOrderData.summaryStats || !filteredOrderData.orderWiseDurations) {
+                console.warn("Data is not in expected format or is empty.");
+                return;
+            }
+            renderSummaryCards(filteredOrderData.summaryStats);
+            renderCharts(filteredOrderData.orderWiseDurations);
+            renderTable(filteredOrderData.orderWiseDurations);
+        }
+
+        // Function to apply date filters
+        function applyFilters() {
+            const startDateInput = document.getElementById('startDate').value;
+            const endDateInput = document.getElementById('endDate').value;
+
+            let tempFilteredData = allOrderData.orderWiseDurations;
+
+            if (startDateInput) {
+                const startDate = new Date(startDateInput + 'T00:00:00'); // Set to start of the day
+                tempFilteredData = tempFilteredData.filter(order => {
+                    const orderDate = new Date(order.orderTimestamp);
+                    return orderDate >= startDate;
+                });
+            }
+
+            if (endDateInput) {
+                const endDate = new Date(endDateInput + 'T23:59:59'); // Set to end of the day
+                tempFilteredData = tempFilteredData.filter(order => {
+                    const orderDate = new Date(order.orderTimestamp);
+                    return orderDate <= endDate;
+                });
+            }
+
+            // Update filteredOrderData for charts and table
+            filteredOrderData = {
+                summaryStats: allOrderData.summaryStats, // Summary stats remain global
+                orderWiseDurations: tempFilteredData
+            };
+            renderDashboard();
+        }
+
+        // Function to reset date filters
+        function resetFilters() {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            filteredOrderData = allOrderData; // Reset to all data
+            renderDashboard();
+        }
+
+        // Function to export table data to CSV
+        function exportCsv() {
+            if (filteredOrderData.orderWiseDurations.length === 0) {
+                showMessageBox("No data to export.", 'info');
+                return;
+            }
+
+            const headers = ['Order Timestamp'].concat(Object.keys(filteredOrderData.orderWiseDurations[0]).filter(key => key !== 'orderTimestamp').map(key => key.replace(/_/g, ' ')));
+            let csvContent = headers.join(',') + '\n';
+
+            filteredOrderData.orderWiseDurations.forEach(order => {
+                const row = [order.orderTimestamp || 'N/A'];
+                Object.keys(order).filter(key => key !== 'orderTimestamp').forEach(key => {
+                    row.push(order[key] || 'N/A');
+                });
+                csvContent += row.join(',') + '\n';
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            if (link.download !== undefined) { // Feature detection
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'order_cycle_data.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                showMessageBox("Your browser does not support downloading files directly. Please copy the data manually.", 'info');
+            }
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchData(); // Fetch data when the page loads
+
+            document.getElementById('applyFilters').addEventListener('click', applyFilters);
+            document.getElementById('resetFilters').addEventListener('click', resetFilters);
+            document.getElementById('exportCsv').addEventListener('click', exportCsv);
         });
     </script>
 </body>
