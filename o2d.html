@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Cycle Analytics Dashboard</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js CDN for powerful charting -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -93,7 +90,6 @@
 <body class="p-4 sm:p-6 md:p-8 lg:p-10">
 
     <div class="max-w-7xl mx-auto">
-        <!-- Header Section -->
         <header class="text-center mb-10">
             <h1 class="text-5xl font-extrabold text-blue-600 mb-4">
                 <i class="fas fa-chart-line mr-3"></i>Order Cycle Analytics
@@ -101,13 +97,11 @@
             <p class="text-lg text-gray-600">Gain powerful insights into your order processing efficiency.</p>
         </header>
 
-        <!-- Loading Indicator -->
         <div id="loadingIndicator" class="flex justify-center items-center h-64" style="display: none;">
             <div class="loading-spinner"></div>
             <p class="ml-4 text-blue-600 text-lg font-medium">Loading data, please wait...</p>
         </div>
 
-        <!-- Error Message -->
         <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative" role="alert">
             <strong class="font-bold">Error!</strong>
             <span class="block sm:inline" id="errorText">Something went wrong while fetching data. Please check the Google Apps Script deployment URL and permissions.</span>
@@ -116,10 +110,8 @@
             </span>
         </div>
 
-        <!-- Dashboard Content -->
         <div id="dashboardContent" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style="display: none;">
 
-            <!-- Overall Summary Card -->
             <div class="card gradient-blue text-white col-span-1 md:col-span-2 lg:col-span-1 flex flex-col justify-between">
                 <div>
                     <h2 class="text-2xl font-bold mb-3"><i class="fas fa-hourglass-half mr-2"></i>Overall Performance</h2>
@@ -131,7 +123,6 @@
                 </div>
             </div>
 
-            <!-- Quickest Stage Card -->
             <div class="card bg-blue-50">
                 <h2 class="text-2xl font-bold text-blue-600 mb-3"><i class="fas fa-rocket mr-2"></i>Quickest Stage</h2>
                 <p class="text-lg text-gray-700 mb-2">Stage Name:</p>
@@ -140,7 +131,6 @@
                 <p id="quickestStageTime" class="text-3xl font-bold text-green-600"></p>
             </div>
 
-            <!-- Laziest Stage Card -->
             <div class="card bg-blue-50">
                 <h2 class="text-2xl font-bold text-blue-600 mb-3"><i class="fas fa-bed mr-2"></i>Laziest Stage</h2>
                 <p class="text-lg text-gray-700 mb-2">Stage Name:</p>
@@ -149,15 +139,20 @@
                 <p id="laziestStageTime" class="text-3xl font-bold text-red-600"></p>
             </div>
 
-            <!-- Average Stage Times Chart -->
             <div class="card col-span-full">
-                <h2 class="text-2xl font-bold text-blue-600 mb-4"><i class="fas fa-chart-bar mr-2"></i>Average Time Per Stage (Hours)</h2>
+                <h2 class="text-2xl font-bold text-blue-600 mb-4"><i class="fas fa-chart-bar mr-2"></i>Average Time Per Stage</h2>
                 <div class="relative h-96">
                     <canvas id="averageStageChart"></canvas>
                 </div>
             </div>
 
-            <!-- Detailed Order Data Table -->
+            <div class="card col-span-full">
+                <h2 class="text-2xl font-bold text-blue-600 mb-4"><i class="fas fa-chart-area mr-2"></i>Daily Order Volume Trends</h2>
+                <div class="relative h-96">
+                    <canvas id="orderVolumeChart"></canvas>
+                </div>
+            </div>
+
             <div class="card col-span-full">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-2xl font-bold text-blue-600"><i class="fas fa-table mr-2"></i>Detailed Order Data</h2>
@@ -169,12 +164,10 @@
                             <tr>
                                 <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Order ID</th>
                                 <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Total Time</th>
-                                <!-- Dynamic headers for stages will be added by JS -->
-                            </tr>
+                                </tr>
                         </thead>
                         <tbody id="detailedDataTableBody" class="divide-y divide-gray-200">
-                            <!-- Data rows will be populated by JS -->
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
             </div>
@@ -182,7 +175,6 @@
         </div>
     </div>
 
-    <!-- Modal for showing error messages -->
     <div id="customModal" class="modal">
         <div class="modal-content">
             <span class="close-button" onclick="document.getElementById('customModal').style.display='none';">&times;</span>
@@ -196,7 +188,7 @@
 
     <script>
         // IMPORTANT: Replace this with the Web App URL you get after deploying code.gs
-        const GOOGLE_APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxZiJZ8SAAdN_KwLKfNOIukL2itbBN11aSnLAD5A_6JRNelK99WPQyq4WsJV8o-Kn_LAA/exec';
+        const GOOGLE_APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxZiJZ8SAAdN_KwLKfNOIukL2itbBN11aSnLAD5A_6JRNelK99WPQyq4WsJV8o-Kn_LAA/exec'; // Replace with your actual deployed URL
 
         document.addEventListener('DOMContentLoaded', () => {
             const loadingIndicator = document.getElementById('loadingIndicator');
@@ -220,7 +212,7 @@
              * @returns {string} The formatted time string (e.g., "01:30:15").
              */
             function formatHoursToHHMMSS(totalHours) {
-                if (totalHours === null || isNaN(totalHours)) {
+                if (totalHours === null || isNaN(totalHours) || !isFinite(totalHours)) {
                     return 'N/A';
                 }
 
@@ -245,9 +237,9 @@
                 errorMessage.style.display = 'none'; // Hide any previous errors
                 dashboardContent.style.display = 'none'; // Hide content
 
-                if (GOOGLE_APPS_SCRIPT_WEB_APP_URL === 'YOUR_DEPLOYED_WEB_APP_URL_HERE') {
+                if (GOOGLE_APPS_SCRIPT_WEB_APP_URL === 'https://script.google.com/macros/s/AKfycbxZiJZ8SAAdN_KwLKfNOIukL2itbBN11aSnLAD5A_6JRNelK99WPQyq4WsJV8o-Kn_LAA/exec') {
                     loadingIndicator.style.display = 'none';
-                    showCustomModal("Please replace 'YOUR_DEPLOYED_WEB_APP_URL_HERE' in the JavaScript code with your actual Google Apps Script Web App URL after deployment.");
+                    showCustomModal("Please replace the placeholder URL in the JavaScript code with your actual Google Apps Script Web App URL after deployment.");
                     return;
                 }
 
@@ -303,11 +295,14 @@
                 // Average Stage Times Chart
                 renderAverageStageChart(data.averageStageTimes);
 
+                // Order Volume Trends Chart
+                renderOrderVolumeChart(data.ordersStartedPerDay, data.ordersCompletedPerDay);
+
                 // Detailed Order Data Table
                 renderDetailedDataTable(data.individualOrderData);
             }
 
-            // Function to render the Chart.js bar chart
+            // Function to render the Chart.js bar chart for average stage times
             function renderAverageStageChart(averageStageTimes) {
                 const ctx = document.getElementById('averageStageChart').getContext('2d');
                 const labels = Object.keys(averageStageTimes).filter(key => averageStageTimes[key] !== null);
@@ -372,8 +367,6 @@
                                 },
                                 ticks: {
                                     color: '#4a5568',
-                                    // Format y-axis ticks to HH:MM:SS if desired, or keep as hours for scale clarity
-                                    // For now, keeping as hours for chart scale interpretation
                                     callback: function(value, index, ticks) {
                                         return value; // Display raw hours on the axis for better scale understanding
                                     }
@@ -403,6 +396,106 @@
                 });
             }
 
+            // Function to render the Chart.js line chart for daily order volume
+            function renderOrderVolumeChart(ordersStarted, ordersCompleted) {
+                const ctx = document.getElementById('orderVolumeChart').getContext('2d');
+
+                // Get all unique dates and sort them
+                const allDates = new Set([...Object.keys(ordersStarted), ...Object.keys(ordersCompleted)]);
+                const sortedDates = Array.from(allDates).sort();
+
+                const startedData = sortedDates.map(date => ordersStarted[date] || 0);
+                const completedData = sortedDates.map(date => ordersCompleted[date] || 0);
+
+                if (window.orderVolumeChartInstance) {
+                    window.orderVolumeChartInstance.destroy();
+                }
+
+                window.orderVolumeChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: sortedDates,
+                        datasets: [
+                            {
+                                label: 'Orders Placed',
+                                data: startedData,
+                                borderColor: '#3b82f6', // blue-600
+                                backgroundColor: 'rgba(59, 130, 246, 0.2)', // Light blue fill
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3,
+                                pointBackgroundColor: '#3b82f6',
+                                pointBorderColor: '#fff',
+                                pointHoverBackgroundColor: '#fff',
+                                pointHoverBorderColor: '#3b82f6'
+                            },
+                            {
+                                label: 'Orders Delivered',
+                                data: completedData,
+                                borderColor: '#10b981', // green-500
+                                backgroundColor: 'rgba(16, 185, 129, 0.2)', // Light green fill
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.3,
+                                pointBackgroundColor: '#10b981',
+                                pointBorderColor: '#fff',
+                                pointHoverBackgroundColor: '#fff',
+                                pointHoverBorderColor: '#10b981'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#4a5568'
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date',
+                                    color: '#4a5568'
+                                },
+                                ticks: {
+                                    color: '#4a5568',
+                                    autoSkip: true,
+                                    maxTicksLimit: 10
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Number of Orders',
+                                    color: '#4a5568'
+                                },
+                                ticks: {
+                                    color: '#4a5568',
+                                    precision: 0 // Ensure whole numbers for order count
+                                },
+                                grid: {
+                                    color: '#e2e8f0'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+
             // Function to render the detailed order data table
             function renderDetailedDataTable(individualOrderData) {
                 detailedDataTableBody.innerHTML = ''; // Clear previous data
@@ -415,13 +508,16 @@
                 // Create dynamic headers for stage times
                 const headerRow = document.querySelector('#detailedDataTableContainer thead tr');
                 // Clear existing dynamic headers (keep Order ID and Total Time)
-                Array.from(headerRow.children).slice(2).forEach(child => child.remove());
+                // Filter out existing default headers before adding dynamic ones
+                const staticHeaders = Array.from(headerRow.children).slice(0, 2); // Order ID, Total Time
+                headerRow.innerHTML = ''; // Clear all
+                staticHeaders.forEach(th => headerRow.appendChild(th)); // Add static back
 
                 const stageNames = Object.keys(individualOrderData[0].stageTimes);
                 stageNames.forEach(stageName => {
                     const th = document.createElement('th');
                     th.className = 'py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider';
-                    th.textContent = `${stageName}`; // Removed "(Hours)" from header
+                    th.textContent = `${stageName}`;
                     headerRow.appendChild(th);
                 });
 
