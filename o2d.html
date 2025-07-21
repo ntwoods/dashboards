@@ -267,7 +267,8 @@
                 // Quickest Stage
                 if (data.quickestStage && data.quickestStage.name) {
                     quickestStageName.textContent = data.quickestStage.name;
-                    quickestStageTime.textContent = `${data.quickestStage.time} hours`;
+                    // Round the time to 2 decimal places for display
+                    quickestStageTime.textContent = `${data.quickestStage.time.toFixed(2)} hours`;
                 } else {
                     quickestStageName.textContent = 'N/A';
                     quickestStageTime.textContent = 'N/A';
@@ -276,7 +277,8 @@
                 // Laziest Stage
                 if (data.laziestStage && data.laziestStage.name) {
                     laziestStageName.textContent = data.laziestStage.name;
-                    laziestStageTime.textContent = `${data.laziestStage.time} hours`;
+                    // Round the time to 2 decimal places for display
+                    laziestStageTime.textContent = `${data.laziestStage.time.toFixed(2)} hours`;
                 } else {
                     laziestStageName.textContent = 'N/A';
                     laziestStageTime.textContent = 'N/A';
