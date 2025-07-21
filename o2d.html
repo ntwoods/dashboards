@@ -93,6 +93,7 @@
             <div id="summary-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Cards will be injected here by JavaScript -->
             </div>
+             <p id="no-summary-data" class="hidden text-center text-gray-500 mt-4">No summary data available.</p>
         </section>
 
         <!-- Filters Section -->
@@ -118,10 +119,12 @@
             <div class="card chart-container">
                 <h2 class="text-xl font-semibold text-gray-700 mb-4">Order-wise Stage Durations (Line Chart)</h2>
                 <canvas id="lineChart"></canvas>
+                <p id="no-line-chart-data" class="hidden text-center text-gray-500 mt-4">No data available for line chart in the selected range.</p>
             </div>
             <div class="card chart-container">
                 <h2 class="text-xl font-semibold text-gray-700 mb-4">Order-wise Stage Durations (Bar Chart)</h2>
                 <canvas id="barChart"></canvas>
+                <p id="no-bar-chart-data" class="hidden text-center text-gray-500 mt-4">No data available for bar chart in the selected range.</p>
             </div>
         </section>
 
@@ -140,6 +143,7 @@
                         <!-- Table rows will be injected here by JavaScript -->
                     </tbody>
                 </table>
+                <p id="no-table-data" class="hidden text-center text-gray-500 mt-4">No order data available for the selected range.</p>
             </div>
         </section>
     </div>
@@ -148,8 +152,8 @@
         // IMPORTANT: Replace this with your deployed Google Apps Script Web App URL
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby0DIhLjrD-iNreDr3d8OKx1KH9FTcMaAcRXOdgWUnhq3_WdkrHvHmN_aDRdHOs39RpoQ/exec';
 
-        let allOrderData = []; // Stores the raw data from the API
-        let filteredOrderData = []; // Stores data after applying filters
+        let allOrderData = null; // Stores the raw data from the API, including summaryStats and stageDescriptions
+        let filteredOrderData = null; // Stores data after applying filters
 
         // Chart instances
         let lineChartInstance;
@@ -227,6 +231,11 @@
 
         // Function to fetch data from Apps Script
         async function fetchData() {
+            if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL') {
+                showMessageBox("Please replace 'YOUR_APPS_SCRIPT_WEB_APP_URL' in the HTML code with your actual deployed Google Apps Script URL.", 'error');
+                return;
+            }
+
             showLoading();
             try {
                 const response = await fetch(APPS_SCRIPT_URL);
@@ -238,7 +247,7 @@
                     throw new Error(data.error);
                 }
                 allOrderData = data;
-                filteredOrderData = data; // Initially, filtered data is all data
+                filteredOrderData = { ...data }; // Initially, filtered data is a copy of all data
                 renderDashboard();
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -249,17 +258,25 @@
         }
 
         // Function to render summary cards
-        function renderSummaryCards(summaryStats) {
+        function renderSummaryCards(summaryStats, stageDescriptions) {
             const summaryCardsContainer = document.getElementById('summary-cards');
+            const noSummaryDataMessage = document.getElementById('no-summary-data');
             summaryCardsContainer.innerHTML = ''; // Clear previous cards
+            noSummaryDataMessage.classList.add('hidden');
 
             const stageNames = Object.keys(summaryStats);
+            if (stageNames.length === 0) {
+                noSummaryDataMessage.classList.remove('hidden');
+                return;
+            }
+
             stageNames.forEach(stageName => {
                 const stats = summaryStats[stageName];
+                const descriptiveName = stageDescriptions[stageName] || stageName.replace(/_/g, ' to ').toUpperCase();
                 const card = document.createElement('div');
                 card.className = 'card flex flex-col items-center justify-center p-4 text-center bg-gradient-to-br from-indigo-50 to-indigo-100';
                 card.innerHTML = `
-                    <h3 class="text-md font-semibold text-indigo-700 mb-2">${stageName.replace(/_/g, ' to ').toUpperCase()}</h3>
+                    <h3 class="text-md font-semibold text-indigo-700 mb-2">${descriptiveName}</h3>
                     <div class="text-3xl font-bold text-indigo-900">${stats.average}</div>
                     <div class="text-sm text-gray-600 mt-2">
                         <p>Min: ${stats.min}</p>
@@ -272,13 +289,24 @@
         }
 
         // Function to render charts
-        function renderCharts(orderWiseDurations) {
+        function renderCharts(orderWiseDurations, stageDescriptions) {
             const ctxLine = document.getElementById('lineChart').getContext('2d');
             const ctxBar = document.getElementById('barChart').getContext('2d');
+            const noLineChartDataMessage = document.getElementById('no-line-chart-data');
+            const noBarChartDataMessage = document.getElementById('no-bar-chart-data');
 
             // Destroy existing chart instances if they exist
             if (lineChartInstance) lineChartInstance.destroy();
             if (barChartInstance) barChartInstance.destroy();
+
+            noLineChartDataMessage.classList.add('hidden');
+            noBarChartDataMessage.classList.add('hidden');
+
+            if (orderWiseDurations.length === 0) {
+                noLineChartDataMessage.classList.remove('hidden');
+                noBarChartDataMessage.classList.remove('hidden');
+                return;
+            }
 
             const labels = orderWiseDurations.map(order => order.orderTimestamp || 'N/A');
             const stageKeys = Object.keys(orderWiseDurations[0] || {}).filter(key => key !== 'orderTimestamp');
@@ -288,9 +316,10 @@
                 const hue = (index * 137 + 50) % 360; // Use a prime number for better distribution
                 const color = `hsl(${hue}, 70%, 60%)`;
                 const borderColor = `hsl(${hue}, 70%, 50%)`;
+                const descriptiveLabel = stageDescriptions[stageKey] || stageKey.replace(/_/g, ' to ').toUpperCase();
 
                 return {
-                    label: stageKey.replace(/_/g, ' to ').toUpperCase(),
+                    label: descriptiveLabel,
                     data: orderWiseDurations.map(order => msToSeconds(hmsToMs(order[stageKey]))),
                     borderColor: borderColor,
                     backgroundColor: color,
@@ -321,6 +350,7 @@
                             callbacks: {
                                 label: function(context) {
                                     const valueInSeconds = context.raw;
+                                    if (isNaN(valueInSeconds)) return `${context.dataset.label}: N/A`;
                                     const hours = Math.floor(valueInSeconds / 3600);
                                     const minutes = Math.floor((valueInSeconds % 3600) / 60);
                                     const seconds = Math.floor(valueInSeconds % 60);
@@ -384,6 +414,7 @@
                             callbacks: {
                                 label: function(context) {
                                     const valueInSeconds = context.raw;
+                                    if (isNaN(valueInSeconds)) return `${context.dataset.label}: N/A`;
                                     const hours = Math.floor(valueInSeconds / 3600);
                                     const minutes = Math.floor((valueInSeconds % 3600) / 60);
                                     const seconds = Math.floor(valueInSeconds % 60);
@@ -427,16 +458,18 @@
         }
 
         // Function to render the table
-        function renderTable(orderWiseDurations) {
+        function renderTable(orderWiseDurations, stageDescriptions) {
             const tableHead = document.querySelector('#order-table thead tr');
             const tableBody = document.querySelector('#order-table tbody');
+            const noTableDataMessage = document.getElementById('no-table-data');
 
             // Clear previous content
             tableHead.innerHTML = '<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Timestamp</th>';
             tableBody.innerHTML = '';
+            noTableDataMessage.classList.add('hidden');
 
             if (orderWiseDurations.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="8" class="px-6 py-4 whitespace-nowrap text-center text-gray-500">No data available for the selected range.</td></tr>';
+                noTableDataMessage.classList.remove('hidden');
                 return;
             }
 
@@ -446,7 +479,7 @@
                 const th = document.createElement('th');
                 th.scope = 'col';
                 th.className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
-                th.textContent = key.replace(/_/g, ' to ').toUpperCase();
+                th.textContent = stageDescriptions[key] || key.replace(/_/g, ' ').toUpperCase(); // Use descriptive name
                 tableHead.appendChild(th);
             });
 
@@ -472,13 +505,14 @@
 
         // Main render function to update all components
         function renderDashboard() {
-            if (!filteredOrderData || !filteredOrderData.summaryStats || !filteredOrderData.orderWiseDurations) {
+            if (!filteredOrderData || !filteredOrderData.summaryStats || !filteredOrderData.orderWiseDurations || !filteredOrderData.stageDescriptions) {
                 console.warn("Data is not in expected format or is empty.");
+                // Optionally show a message box here if initial data fetch fails or is malformed
                 return;
             }
-            renderSummaryCards(filteredOrderData.summaryStats);
-            renderCharts(filteredOrderData.orderWiseDurations);
-            renderTable(filteredOrderData.orderWiseDurations);
+            renderSummaryCards(filteredOrderData.summaryStats, filteredOrderData.stageDescriptions);
+            renderCharts(filteredOrderData.orderWiseDurations, filteredOrderData.stageDescriptions);
+            renderTable(filteredOrderData.orderWiseDurations, filteredOrderData.stageDescriptions);
         }
 
         // Function to apply date filters
@@ -486,11 +520,11 @@
             const startDateInput = document.getElementById('startDate').value;
             const endDateInput = document.getElementById('endDate').value;
 
-            let tempFilteredData = allOrderData.orderWiseDurations;
+            let tempFilteredDurations = allOrderData.orderWiseDurations;
 
             if (startDateInput) {
                 const startDate = new Date(startDateInput + 'T00:00:00'); // Set to start of the day
-                tempFilteredData = tempFilteredData.filter(order => {
+                tempFilteredDurations = tempFilteredDurations.filter(order => {
                     const orderDate = new Date(order.orderTimestamp);
                     return orderDate >= startDate;
                 });
@@ -498,41 +532,116 @@
 
             if (endDateInput) {
                 const endDate = new Date(endDateInput + 'T23:59:59'); // Set to end of the day
-                tempFilteredData = tempFilteredData.filter(order => {
+                tempFilteredDurations = tempFilteredDurations.filter(order => {
                     const orderDate = new Date(order.orderTimestamp);
                     return orderDate <= endDate;
                 });
             }
 
-            // Update filteredOrderData for charts and table
+            // Recalculate summary stats for the filtered data
+            const newSummaryStats = {};
+            const allFilteredStageDurationsMs = {};
+            const stageKeys = Object.keys(allOrderData.summaryStats); // Use all original stage keys
+
+            stageKeys.forEach(key => {
+                allFilteredStageDurationsMs[key] = [];
+            });
+
+            tempFilteredDurations.forEach(order => {
+                stageKeys.forEach(key => {
+                    const durationMs = hmsToMs(order[key]);
+                    if (!isNaN(durationMs)) {
+                        allFilteredStageDurationsMs[key].push(durationMs);
+                    }
+                });
+            });
+
+            stageKeys.forEach(key => {
+                const durations = allFilteredStageDurationsMs[key];
+                if (durations.length > 0) {
+                    const min = Math.min(...durations);
+                    const max = Math.max(...durations);
+                    const average = durations.reduce((sum, d) => sum + d, 0) / durations.length;
+                    const median = calculateMedian(durations);
+
+                    newSummaryStats[key] = {
+                        average: formatDuration(average),
+                        min: formatDuration(min),
+                        max: formatDuration(max),
+                        median: formatDuration(median)
+                    };
+                } else {
+                    newSummaryStats[key] = {
+                        average: 'N/A',
+                        min: 'N/A',
+                        max: 'N/A',
+                        median: 'N/A'
+                    };
+                }
+            });
+
+
             filteredOrderData = {
-                summaryStats: allOrderData.summaryStats, // Summary stats remain global
-                orderWiseDurations: tempFilteredData
+                summaryStats: newSummaryStats,
+                stageDescriptions: allOrderData.stageDescriptions, // Keep original descriptions
+                orderWiseDurations: tempFilteredDurations
             };
             renderDashboard();
         }
+
+        // Helper to calculate median (copied from Apps Script, needed for client-side filtering)
+        function calculateMedian(arr) {
+            if (arr.length === 0) return 0;
+            const sortedArr = [...arr].sort((a, b) => a - b);
+            const mid = Math.floor(sortedArr.length / 2);
+
+            if (sortedArr.length % 2 === 0) {
+                return (sortedArr[mid - 1] + sortedArr[mid]) / 2;
+            } else {
+                return sortedArr[mid];
+            }
+        }
+
+        // Helper to format duration (copied from Apps Script, needed for client-side filtering)
+        function formatDuration(ms) {
+            if (ms === null || isNaN(ms)) return 'N/A';
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            return [hours, minutes, seconds]
+                .map(unit => String(unit).padStart(2, '0'))
+                .join(':');
+        }
+
 
         // Function to reset date filters
         function resetFilters() {
             document.getElementById('startDate').value = '';
             document.getElementById('endDate').value = '';
-            filteredOrderData = allOrderData; // Reset to all data
+            filteredOrderData = { ...allOrderData }; // Reset to a copy of all data
             renderDashboard();
         }
 
         // Function to export table data to CSV
         function exportCsv() {
-            if (filteredOrderData.orderWiseDurations.length === 0) {
+            if (!filteredOrderData || filteredOrderData.orderWiseDurations.length === 0) {
                 showMessageBox("No data to export.", 'info');
                 return;
             }
 
-            const headers = ['Order Timestamp'].concat(Object.keys(filteredOrderData.orderWiseDurations[0]).filter(key => key !== 'orderTimestamp').map(key => key.replace(/_/g, ' ')));
+            const headers = ['Order Timestamp'].concat(
+                Object.keys(filteredOrderData.orderWiseDurations[0])
+                      .filter(key => key !== 'orderTimestamp')
+                      .map(key => filteredOrderData.stageDescriptions[key] || key.replace(/_/g, ' '))
+            );
             let csvContent = headers.join(',') + '\n';
 
             filteredOrderData.orderWiseDurations.forEach(order => {
                 const row = [order.orderTimestamp || 'N/A'];
                 Object.keys(order).filter(key => key !== 'orderTimestamp').forEach(key => {
+                    // Ensure N/A values are handled correctly in CSV
                     row.push(order[key] || 'N/A');
                 });
                 csvContent += row.join(',') + '\n';
