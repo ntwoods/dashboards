@@ -196,7 +196,7 @@
 
     <script>
         // IMPORTANT: Replace this with the Web App URL you get after deploying code.gs
-        const GOOGLE_APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxZiJZ8SAAdN_KwLKfNOIukL2itbBN11aSnLAD5A_6JRNelK99WPQyq4WsJV8o-Kn_LAA/exec';
+        const GOOGLE_APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxOvz00MgojAkQZGf1nOCvGt1uPagVYW2uh8yg3GeDrVyZI6gmcTbpOZyxD873V43R5qA/exec';
 
         document.addEventListener('DOMContentLoaded', () => {
             const loadingIndicator = document.getElementById('loadingIndicator');
@@ -225,12 +225,6 @@
                 loadingIndicator.style.display = 'flex'; // Show loading
                 errorMessage.style.display = 'none'; // Hide any previous errors
                 dashboardContent.style.display = 'none'; // Hide content
-
-                if (GOOGLE_APPS_SCRIPT_WEB_APP_URL === 'https://script.google.com/macros/s/AKfycbxOvz00MgojAkQZGf1nOCvGt1uPagVYW2uh8yg3GeDrVyZI6gmcTbpOZyxD873V43R5qA/exec') {
-                    loadingIndicator.style.display = 'none';
-                    showCustomModal("Please replace 'YOUR_DEPLOYED_WEB_APP_URL_HERE' in the JavaScript code with your actual Google Apps Script Web App URL after deployment.");
-                    return;
-                }
 
                 try {
                     const response = await fetch(GOOGLE_APPS_SCRIPT_WEB_APP_URL);
