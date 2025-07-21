@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Cycle Analytics Dashboard</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN for powerful charting -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -90,6 +93,7 @@
 <body class="p-4 sm:p-6 md:p-8 lg:p-10">
 
     <div class="max-w-7xl mx-auto">
+        <!-- Header Section -->
         <header class="text-center mb-10">
             <h1 class="text-5xl font-extrabold text-blue-600 mb-4">
                 <i class="fas fa-chart-line mr-3"></i>Order Cycle Analytics
@@ -97,11 +101,13 @@
             <p class="text-lg text-gray-600">Gain powerful insights into your order processing efficiency.</p>
         </header>
 
+        <!-- Loading Indicator -->
         <div id="loadingIndicator" class="flex justify-center items-center h-64" style="display: none;">
             <div class="loading-spinner"></div>
             <p class="ml-4 text-blue-600 text-lg font-medium">Loading data, please wait...</p>
         </div>
 
+        <!-- Error Message -->
         <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative" role="alert">
             <strong class="font-bold">Error!</strong>
             <span class="block sm:inline" id="errorText">Something went wrong while fetching data. Please check the Google Apps Script deployment URL and permissions.</span>
@@ -110,9 +116,11 @@
             </span>
         </div>
 
+        <!-- Dashboard Content -->
         <div id="dashboardContent" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" style="display: none;">
 
-            <div class="card gradient-blue text-white flex flex-col justify-between">
+            <!-- Overall Summary Card -->
+            <div class="card gradient-blue text-white col-span-1 md:col-span-2 lg:col-span-1 flex flex-col justify-between">
                 <div>
                     <h2 class="text-2xl font-bold mb-3"><i class="fas fa-hourglass-half mr-2"></i>Overall Performance</h2>
                     <p class="text-lg mb-2">Average Total Order Processing Time:</p>
@@ -123,15 +131,7 @@
                 </div>
             </div>
 
-            <div class="card bg-blue-50">
-                <h2 class="text-2xl font-bold text-blue-600 mb-3"><i class="fas fa-cubes mr-2"></i>Total Orders Processed</h2>
-                <p class="text-lg text-gray-700 mb-2">Number of completed orders analyzed:</p>
-                <p id="totalOrdersProcessed" class="text-5xl font-extrabold text-blue-800 mb-4"></p>
-                <div class="text-sm opacity-90 text-gray-600">
-                    <p>Orders with complete processing timestamps from start to finish.</p>
-                </div>
-            </div>
-
+            <!-- Quickest Stage Card -->
             <div class="card bg-blue-50">
                 <h2 class="text-2xl font-bold text-blue-600 mb-3"><i class="fas fa-rocket mr-2"></i>Quickest Stage</h2>
                 <p class="text-lg text-gray-700 mb-2">Stage Name:</p>
@@ -140,6 +140,7 @@
                 <p id="quickestStageTime" class="text-3xl font-bold text-green-600"></p>
             </div>
 
+            <!-- Laziest Stage Card -->
             <div class="card bg-blue-50">
                 <h2 class="text-2xl font-bold text-blue-600 mb-3"><i class="fas fa-bed mr-2"></i>Laziest Stage</h2>
                 <p class="text-lg text-gray-700 mb-2">Stage Name:</p>
@@ -148,52 +149,15 @@
                 <p id="laziestStageTime" class="text-3xl font-bold text-red-600"></p>
             </div>
 
+            <!-- Average Stage Times Chart -->
             <div class="card col-span-full">
-                <h2 class="text-2xl font-bold text-blue-600 mb-4"><i class="fas fa-chart-bar mr-2"></i>Average Time Per Stage</h2>
+                <h2 class="text-2xl font-bold text-blue-600 mb-4"><i class="fas fa-chart-bar mr-2"></i>Average Time Per Stage (Hours)</h2>
                 <div class="relative h-96">
                     <canvas id="averageStageChart"></canvas>
                 </div>
             </div>
 
-            <div class="card col-span-full">
-                <h2 class="text-2xl font-bold text-blue-600 mb-4"><i class="fas fa-list-alt mr-2"></i>Stage Performance Summary</h2>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white border border-gray-200 rounded-lg">
-                        <thead class="bg-blue-50">
-                            <tr>
-                                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Stage</th>
-                                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Min Time</th>
-                                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Max Time</th>
-                                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Median Time</th>
-                                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Average Time</th>
-                            </tr>
-                        </thead>
-                        <tbody id="stagePerformanceTableBody" class="divide-y divide-gray-200">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="card col-span-full">
-                <h2 class="text-2xl font-bold text-blue-600 mb-4"><i class="fas fa-chart-area mr-2"></i>Daily Order Volume Trends</h2>
-                <div class="relative h-96">
-                    <canvas id="orderVolumeChart"></canvas>
-                </div>
-            </div>
-
-            <div class="card col-span-full">
-                <h2 class="text-2xl font-bold text-blue-600 mb-4"><i class="fas fa-chart-scatter mr-2"></i>Individual Stage Duration Distribution</h2>
-                <div class="mb-4">
-                    <label for="stageSelect" class="block text-gray-700 text-sm font-bold mb-2">Select Stage:</label>
-                    <select id="stageSelect" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                        </select>
-                </div>
-                <div class="relative h-96">
-                    <canvas id="stageDistributionChart"></canvas>
-                </div>
-            </div>
-
-
+            <!-- Detailed Order Data Table -->
             <div class="card col-span-full">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-2xl font-bold text-blue-600"><i class="fas fa-table mr-2"></i>Detailed Order Data</h2>
@@ -202,13 +166,15 @@
                 <div id="detailedDataTableContainer" class="overflow-x-auto" style="display: none;">
                     <table class="min-w-full bg-white border border-gray-200 rounded-lg">
                         <thead class="bg-blue-50">
-                            <tr id="detailedDataTableHeaders">
+                            <tr>
                                 <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Order ID</th>
-                                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Total Time</th>
+                                <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Total Time (Hours)</th>
+                                <!-- Dynamic headers for stages will be added by JS -->
                             </tr>
                         </thead>
                         <tbody id="detailedDataTableBody" class="divide-y divide-gray-200">
-                            </tbody>
+                            <!-- Data rows will be populated by JS -->
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -216,6 +182,7 @@
         </div>
     </div>
 
+    <!-- Modal for showing error messages -->
     <div id="customModal" class="modal">
         <div class="modal-content">
             <span class="close-button" onclick="document.getElementById('customModal').style.display='none';">&times;</span>
@@ -229,7 +196,7 @@
 
     <script>
         // IMPORTANT: Replace this with the Web App URL you get after deploying code.gs
-        const GOOGLE_APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzBVk8cj8c8jMh7RP_abZ30aNQy4tm-VwOiVBJMvYPchFlFaKohsSESZ5s8uhLIj6QvXw/exec'; // Placeholder, remember to update this!
+        const GOOGLE_APPS_SCRIPT_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxZiJZ8SAAdN_KwLKfNOIukL2itbBN11aSnLAD5A_6JRNelK99WPQyq4WsJV8o-Kn_LAA/exec';
 
         document.addEventListener('DOMContentLoaded', () => {
             const loadingIndicator = document.getElementById('loadingIndicator');
@@ -237,434 +204,230 @@
             const errorText = document.getElementById('errorText');
             const dashboardContent = document.getElementById('dashboardContent');
             const overallAvgTime = document.getElementById('overallAvgTime');
-            const totalOrdersProcessedElem = document.getElementById('totalOrdersProcessed');
             const quickestStageName = document.getElementById('quickestStageName');
             const quickestStageTime = document.getElementById('quickestStageTime');
             const laziestStageName = document.getElementById('laziestStageName');
             const laziestStageTime = document.getElementById('laziestStageTime');
-            const stagePerformanceTableBody = document.getElementById('stagePerformanceTableBody');
             const detailedDataTableContainer = document.getElementById('detailedDataTableContainer');
             const detailedDataTableBody = document.getElementById('detailedDataTableBody');
-            const detailedDataTableHeaders = document.getElementById('detailedDataTableHeaders'); // New
             const toggleDetailsBtn = document.getElementById('toggleDetailsBtn');
             const customModal = document.getElementById('customModal');
             const modalMessage = document.getElementById('modalMessage');
-            const stageSelect = document.getElementById('stageSelect');
 
-            let currentDashboardData = null; // Store fetched data globally for dynamic charts
-            let averageStageChartInstance = null;
-            let orderVolumeChartInstance = null;
-            let stageDistributionChartInstance = null;
-
-            /**
-             * Helper function to format hours (float) into HH:MM:SS format.
-             * @param {number} totalHours The total hours as a float.
-             * @returns {string} The formatted time string (e.g., "01:30:15").
-             */
-            function formatHoursToHHMMSS(totalHours) {
-                if (totalHours === null || totalHours === undefined) {
-                    return 'N/A';
-                }
-                const hours = Math.floor(totalHours);
-                const minutes = Math.floor((totalHours * 60) % 60);
-                const seconds = Math.floor((totalHours * 3600) % 60);
-
-                const pad = (num) => num.toString().padStart(2, '0');
-                return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-            }
-
-            /**
-             * Displays a custom modal with a message.
-             * @param {string} message The message to display in the modal.
-             */
-            function showModal(message) {
+            // Function to show custom modal
+            function showCustomModal(message) {
                 modalMessage.textContent = message;
-                customModal.style.display = 'flex'; // Use flex to center content
+                customModal.style.display = 'flex';
             }
 
-            /**
-             * Updates all charts with new data.
-             * @param {object} data The dashboard data.
-             */
-            function updateCharts(data) {
-                // Average Time Per Stage Chart
-                const averageStageCtx = document.getElementById('averageStageChart').getContext('2d');
-                const stageNames = Object.keys(data.averageStageTimes);
-                const averageTimes = Object.values(data.averageStageTimes);
-
-                if (averageStageChartInstance) {
-                    averageStageChartInstance.destroy();
-                }
-                averageStageChartInstance = new Chart(averageStageCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: stageNames,
-                        datasets: [{
-                            label: 'Average Time (Hours)',
-                            data: averageTimes,
-                            backgroundColor: 'rgba(59, 130, 246, 0.7)', // Tailwind blue-500
-                            borderColor: 'rgba(37, 99, 235, 1)', // Tailwind blue-600
-                            borderWidth: 1,
-                            borderRadius: 8 // Rounded bars
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            title: {
-                                display: true,
-                                text: 'Average Processing Time Per Stage',
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
-                                },
-                                color: '#1a202c'
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        if (context.parsed.y !== null) {
-                                            label += formatHoursToHHMMSS(context.parsed.y);
-                                        }
-                                        return label;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'Time (HH:MM:SS)',
-                                    color: '#4a5568'
-                                },
-                                ticks: {
-                                    callback: function(value) {
-                                        return formatHoursToHHMMSS(value);
-                                    }
-                                }
-                            },
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Stage',
-                                    color: '#4a5568'
-                                }
-                            }
-                        }
-                    }
-                });
-
-                // Daily Order Volume Trends Chart
-                const orderVolumeCtx = document.getElementById('orderVolumeChart').getContext('2d');
-                const ordersStarted = data.ordersStartedPerDay;
-                const ordersCompleted = data.ordersCompletedPerDay;
-
-                // Get all unique dates and sort them
-                const allDates = [...new Set([...Object.keys(ordersStarted), ...Object.keys(ordersCompleted)])].sort();
-
-                const startedData = allDates.map(date => ordersStarted[date] || 0);
-                const completedData = allDates.map(date => ordersCompleted[date] || 0);
-
-                if (orderVolumeChartInstance) {
-                    orderVolumeChartInstance.destroy();
-                }
-                orderVolumeChartInstance = new Chart(orderVolumeCtx, {
-                    type: 'line',
-                    data: {
-                        labels: allDates,
-                        datasets: [
-                            {
-                                label: 'Orders Started',
-                                data: startedData,
-                                borderColor: 'rgb(75, 192, 192)',
-                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                                fill: true,
-                                tension: 0.3
-                            },
-                            {
-                                label: 'Orders Completed',
-                                data: completedData,
-                                borderColor: 'rgb(255, 99, 132)',
-                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                                fill: true,
-                                tension: 0.3
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            },
-                            title: {
-                                display: true,
-                                text: 'Daily Order Volume Trends',
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
-                                },
-                                color: '#1a202c'
-                            }
-                        },
-                        scales: {
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Date',
-                                    color: '#4a5568'
-                                }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'Number of Orders',
-                                    color: '#4a5568'
-                                },
-                                ticks: {
-                                    precision: 0 // Ensure integer ticks for order count
-                                }
-                            }
-                        }
-                    }
-                });
-
-                // Populate stage select dropdown
-                stageSelect.innerHTML = ''; // Clear previous options
-                stageNames.forEach(stage => {
-                    const option = document.createElement('option');
-                    option.value = stage;
-                    option.textContent = stage;
-                    stageSelect.appendChild(option);
-                });
-
-                // Trigger initial update for stage distribution chart
-                if (stageNames.length > 0) {
-                    updateStageDistributionChart(stageSelect.value);
-                }
-            }
-
-            /**
-             * Updates the individual stage duration distribution chart.
-             * @param {string} selectedStageName The name of the stage to display.
-             */
-            function updateStageDistributionChart(selectedStageName) {
-                const stageDistributionCtx = document.getElementById('stageDistributionChart').getContext('2d');
-                const stageDataPoints = [];
-
-                // Collect all individual durations for the selected stage
-                currentDashboardData.individualOrderData.forEach((order, index) => {
-                    const duration = order.stageTimes[selectedStageName];
-                    if (duration !== null && duration !== undefined) {
-                        // For a scatter plot, we can use order index as X and duration as Y
-                        stageDataPoints.push({ x: index + 1, y: duration });
-                    }
-                });
-
-                if (stageDistributionChartInstance) {
-                    stageDistributionChartInstance.destroy();
-                }
-
-                stageDistributionChartInstance = new Chart(stageDistributionCtx, {
-                    type: 'scatter', // Use scatter plot for distribution
-                    data: {
-                        datasets: [{
-                            label: `Individual Durations for '${selectedStageName}'`,
-                            data: stageDataPoints,
-                            backgroundColor: 'rgba(153, 102, 255, 0.6)', // Purple color
-                            borderColor: 'rgba(153, 102, 255, 1)',
-                            pointRadius: 5,
-                            pointHoverRadius: 7
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: true,
-                                position: 'top'
-                            },
-                            title: {
-                                display: true,
-                                text: `Individual Order Durations: ${selectedStageName}`,
-                                font: {
-                                    size: 16,
-                                    weight: 'bold'
-                                },
-                                color: '#1a202c'
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        return `Order ${context.parsed.x}: ${formatHoursToHHMMSS(context.parsed.y)}`;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: {
-                                title: {
-                                    display: true,
-                                    text: 'Order Index',
-                                    color: '#4a5568'
-                                },
-                                beginAtZero: true
-                            },
-                            y: {
-                                title: {
-                                    display: true,
-                                    text: 'Duration (HH:MM:SS)',
-                                    color: '#4a5568'
-                                },
-                                beginAtZero: true,
-                                ticks: {
-                                    callback: function(value) {
-                                        return formatHoursToHHMMSS(value);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-
-
-            /**
-             * Fetches data from the Google Apps Script Web App and updates the dashboard.
-             */
+            // Function to fetch data from Google Apps Script
             async function fetchData() {
-                loadingIndicator.style.display = 'flex';
-                errorMessage.classList.add('hidden');
-                dashboardContent.style.display = 'none';
+                loadingIndicator.style.display = 'flex'; // Show loading
+                errorMessage.style.display = 'none'; // Hide any previous errors
+                dashboardContent.style.display = 'none'; // Hide content
+
+                if (GOOGLE_APPS_SCRIPT_WEB_APP_URL === 'https://script.google.com/macros/s/AKfycbxOvz00MgojAkQZGf1nOCvGt1uPagVYW2uh8yg3GeDrVyZI6gmcTbpOZyxD873V43R5qA/exec') {
+                    loadingIndicator.style.display = 'none';
+                    showCustomModal("Please replace 'YOUR_DEPLOYED_WEB_APP_URL_HERE' in the JavaScript code with your actual Google Apps Script Web App URL after deployment.");
+                    return;
+                }
 
                 try {
                     const response = await fetch(GOOGLE_APPS_SCRIPT_WEB_APP_URL);
                     if (!response.ok) {
-                        const errorBody = await response.text(); // Get raw text for better error debugging
-                        throw new Error(`HTTP error! status: ${response.status}. Response: ${errorBody}`);
+                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     const data = await response.json();
 
                     if (data.error) {
-                        showModal(`Backend Error: ${data.error}`);
-                        errorMessage.classList.remove('hidden');
-                        errorText.textContent = `Backend Error: ${data.error}`;
-                        return;
+                        throw new Error(data.error);
                     }
 
-                    currentDashboardData = data; // Store data globally
-
-                    // Update KPI cards
-                    overallAvgTime.textContent = formatHoursToHHMMSS(data.overallAverageTotalTime);
-                    totalOrdersProcessedElem.textContent = data.totalOrdersProcessed;
-
-                    if (data.quickestStage) {
-                        quickestStageName.textContent = data.quickestStage.name;
-                        quickestStageTime.textContent = formatHoursToHHMMSS(data.quickestStage.averageTime);
-                    } else {
-                        quickestStageName.textContent = 'N/A';
-                        quickestStageTime.textContent = 'N/A';
-                    }
-
-                    if (data.laziestStage) {
-                        laziestStageName.textContent = data.laziestStage.name;
-                        laziestStageTime.textContent = formatHoursToHHMMSS(data.laziestStage.averageTime);
-                    } else {
-                        laziestStageName.textContent = 'N/A';
-                        laziestStageTime.textContent = 'N/A';
-                    }
-
-                    // Populate Stage Performance Summary Table
-                    stagePerformanceTableBody.innerHTML = '';
-                    data.stagePerformanceSummary.forEach(stage => {
-                        const row = document.createElement('tr');
-                        row.className = 'hover:bg-gray-50';
-                        row.innerHTML = `
-                            <td class="py-3 px-4 text-sm font-medium text-gray-900">${stage.name}</td>
-                            <td class="py-3 px-4 text-sm text-gray-700">${formatHoursToHHMMSS(stage.min)}</td>
-                            <td class="py-3 px-4 text-sm text-gray-700">${formatHoursToHHMMSS(stage.max)}</td>
-                            <td class="py-3 px-4 text-sm text-gray-700">${formatHoursToHHMMSS(stage.median)}</td>
-                            <td class="py-3 px-4 text-sm text-gray-700">${formatHoursToHHMMSS(stage.average)}</td>
-                        `;
-                        stagePerformanceTableBody.appendChild(row);
-                    });
-
-                    // Populate Detailed Order Data Table Headers dynamically
-                    detailedDataTableHeaders.innerHTML = `
-                        <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Order ID</th>
-                        <th class="py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider">Total Time</th>
-                    `;
-                    const stageNamesForDetailedTable = Object.keys(data.averageStageTimes || {}); // Use keys from averageStageTimes for consistency
-                    stageNamesForDetailedTable.forEach(stageName => {
-                        const th = document.createElement('th');
-                        th.className = 'py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider';
-                        th.textContent = stageName;
-                        detailedDataTableHeaders.appendChild(th);
-                    });
-
-
-                    // Populate Detailed Order Data Table Body
-                    detailedDataTableBody.innerHTML = '';
-                    if (data.individualOrderData && data.individualOrderData.length > 0) {
-                        data.individualOrderData.forEach(order => {
-                            let row = document.createElement('tr');
-                            row.className = 'hover:bg-gray-50';
-
-                            // Order ID
-                            let orderIdCell = document.createElement('td');
-                            orderIdCell.className = 'py-3 px-4 text-sm font-medium text-gray-900';
-                            orderIdCell.textContent = order.orderId;
-                            row.appendChild(orderIdCell);
-
-                            // Total Time
-                            let totalTimeCell = document.createElement('td');
-                            totalTimeCell.className = 'py-3 px-4 text-sm text-gray-700';
-                            totalTimeCell.textContent = formatHoursToHHMMSS(order.totalProcessingTimeHours);
-                            row.appendChild(totalTimeCell);
-
-                            // Stage Times
-                            stageNamesForDetailedTable.forEach(stageName => {
-                                let stageTimeCell = document.createElement('td');
-                                stageTimeCell.className = 'py-3 px-4 text-sm text-gray-700';
-                                const time = order.stageTimes[stageName];
-                                stageTimeCell.textContent = formatHoursToHHMMSS(time);
-                                row.appendChild(stageTimeCell);
-                            });
-
-                            detailedDataTableBody.appendChild(row);
-                        });
-                    } else {
-                         const noDataRow = document.createElement('tr');
-                         noDataRow.innerHTML = `<td colspan="${2 + stageNamesForDetailedTable.length}" class="py-4 px-4 text-center text-gray-500">No detailed order data available.</td>`;
-                         detailedDataTableBody.appendChild(noDataRow);
-                    }
-
-
-                    // Update charts
-                    updateCharts(data);
-
-                    dashboardContent.style.display = 'grid'; // Show dashboard content
+                    renderDashboard(data);
+                    dashboardContent.style.display = 'grid'; // Show content
                 } catch (error) {
                     console.error('Error fetching data:', error);
-                    showModal(`Failed to load data. Please check the Web App URL and ensure the Google Apps Script is deployed correctly (as "Anyone, even anonymous"). Details: ${error.message}`);
-                    errorMessage.classList.remove('hidden');
-                    errorText.textContent = `Failed to load data. Please check the Web App URL and ensure the Google Apps Script is deployed correctly (as "Anyone, even anonymous"). Details: ${error.message}`;
+                    errorText.textContent = `Failed to load data: ${error.message}. Please ensure the Google Apps Script is deployed correctly and the URL is accurate.`;
+                    errorMessage.style.display = 'block'; // Show error
                 } finally {
-                    loadingIndicator.style.display = 'none';
+                    loadingIndicator.style.display = 'none'; // Hide loading
                 }
+            }
+
+            // Function to render the dashboard with fetched data
+            function renderDashboard(data) {
+                // Overall Summary
+                if (data.overallAverageTotalTime !== null) {
+                    overallAvgTime.textContent = `${data.overallAverageTotalTime} hours`;
+                } else {
+                    overallAvgTime.textContent = 'N/A';
+                }
+
+
+                // Quickest Stage
+                if (data.quickestStage && data.quickestStage.name) {
+                    quickestStageName.textContent = data.quickestStage.name;
+                    quickestStageTime.textContent = `${data.quickestStage.time} hours`;
+                } else {
+                    quickestStageName.textContent = 'N/A';
+                    quickestStageTime.textContent = 'N/A';
+                }
+
+                // Laziest Stage
+                if (data.laziestStage && data.laziestStage.name) {
+                    laziestStageName.textContent = data.laziestStage.name;
+                    laziestStageTime.textContent = `${data.laziestStage.time} hours`;
+                } else {
+                    laziestStageName.textContent = 'N/A';
+                    laziestStageTime.textContent = 'N/A';
+                }
+
+                // Average Stage Times Chart
+                renderAverageStageChart(data.averageStageTimes);
+
+                // Detailed Order Data Table
+                renderDetailedDataTable(data.individualOrderData);
+            }
+
+            // Function to render the Chart.js bar chart
+            function renderAverageStageChart(averageStageTimes) {
+                const ctx = document.getElementById('averageStageChart').getContext('2d');
+                const labels = Object.keys(averageStageTimes).filter(key => averageStageTimes[key] !== null);
+                const values = labels.map(key => averageStageTimes[key]);
+
+                if (window.averageStageChartInstance) {
+                    window.averageStageChartInstance.destroy(); // Destroy previous chart instance
+                }
+
+                window.averageStageChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Average Time (Hours)',
+                            data: values,
+                            backgroundColor: [
+                                '#60a5fa', // blue-400
+                                '#3b82f6', // blue-500
+                                '#2563eb', // blue-600
+                                '#1d4ed8', // blue-700
+                                '#1e40af', // blue-800
+                                '#1e3a8a', // blue-900
+                                '#172554'  // blue-950
+                            ],
+                            borderColor: [
+                                '#3b82f6',
+                                '#2563eb',
+                                '#1d4ed8',
+                                '#1e40af',
+                                '#1e3a8a',
+                                '#172554',
+                                '#0f172a'
+                            ],
+                            borderWidth: 1,
+                            borderRadius: 8, // Rounded bars
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false,
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.parsed.y} hours`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Average Time (Hours)',
+                                    color: '#4a5568'
+                                },
+                                ticks: {
+                                    color: '#4a5568'
+                                },
+                                grid: {
+                                    color: '#e2e8f0'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Order Processing Stage',
+                                    color: '#4a5568'
+                                },
+                                ticks: {
+                                    color: '#4a5568',
+                                    autoSkip: false,
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Function to render the detailed order data table
+            function renderDetailedDataTable(individualOrderData) {
+                detailedDataTableBody.innerHTML = ''; // Clear previous data
+
+                if (individualOrderData.length === 0) {
+                    detailedDataTableBody.innerHTML = '<tr><td colspan="100%" class="text-center py-4 text-gray-500">No detailed order data available.</td></tr>';
+                    return;
+                }
+
+                // Create dynamic headers for stage times
+                const headerRow = document.querySelector('#detailedDataTableContainer thead tr');
+                // Clear existing dynamic headers (keep Order ID and Total Time)
+                Array.from(headerRow.children).slice(2).forEach(child => child.remove());
+
+                const stageNames = Object.keys(individualOrderData[0].stageTimes);
+                stageNames.forEach(stageName => {
+                    const th = document.createElement('th');
+                    th.className = 'py-3 px-4 text-left text-sm font-semibold text-blue-700 uppercase tracking-wider';
+                    th.textContent = `${stageName} (Hours)`;
+                    headerRow.appendChild(th);
+                });
+
+                individualOrderData.forEach(order => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-blue-50';
+
+                    // Order ID
+                    let orderIdCell = document.createElement('td');
+                    orderIdCell.className = 'py-3 px-4 text-sm text-gray-700 font-medium';
+                    orderIdCell.textContent = order.orderId;
+                    row.appendChild(orderIdCell);
+
+                    // Total Time
+                    let totalTimeCell = document.createElement('td');
+                    totalTimeCell.className = 'py-3 px-4 text-sm text-gray-700';
+                    totalTimeCell.textContent = order.totalProcessingTimeHours !== null ? `${order.totalProcessingTimeHours.toFixed(2)}` : 'N/A';
+                    row.appendChild(totalTimeCell);
+
+                    // Stage Times
+                    stageNames.forEach(stageName => {
+                        let stageTimeCell = document.createElement('td');
+                        stageTimeCell.className = 'py-3 px-4 text-sm text-gray-700';
+                        const time = order.stageTimes[stageName];
+                        stageTimeCell.textContent = time !== null ? `${time.toFixed(2)}` : 'N/A';
+                        row.appendChild(stageTimeCell);
+                    });
+
+                    detailedDataTableBody.appendChild(row);
+                });
             }
 
             // Toggle detailed table visibility
@@ -675,13 +438,6 @@
                 } else {
                     detailedDataTableContainer.style.display = 'none';
                     toggleDetailsBtn.textContent = 'Show Details';
-                }
-            });
-
-            // Event listener for stage selection change
-            stageSelect.addEventListener('change', (event) => {
-                if (currentDashboardData) {
-                    updateStageDistributionChart(event.target.value);
                 }
             });
 
