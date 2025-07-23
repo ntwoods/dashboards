@@ -135,7 +135,7 @@
                 <table id="order-table" class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Timestamp</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dealer Name</th>
                             <!-- Dynamic headers for stages -->
                         </tr>
                     </thead>
@@ -308,8 +308,10 @@
                 return;
             }
 
-            const labels = orderWiseDurations.map(order => order.orderTimestamp || 'N/A');
-            const stageKeys = Object.keys(orderWiseDurations[0] || {}).filter(key => key !== 'orderTimestamp');
+            // Use dealerName for labels, falling back to orderTimestamp if dealerName is not present
+            const labels = orderWiseDurations.map(order => order.dealerName || order.orderTimestamp || 'N/A');
+            // Filter out 'orderTimestamp' and 'dealerName' from stageKeys as they are not durations
+            const stageKeys = Object.keys(orderWiseDurations[0] || {}).filter(key => key !== 'orderTimestamp' && key !== 'dealerName');
 
             const datasets = stageKeys.map((stageKey, index) => {
                 // Generate a consistent but distinct color for each stage
@@ -366,7 +368,7 @@
                         x: {
                             title: {
                                 display: true,
-                                text: 'Order Timestamp'
+                                text: 'Dealer Name' // Changed X-axis title
                             }
                         },
                         y: {
@@ -430,7 +432,7 @@
                         x: {
                             title: {
                                 display: true,
-                                text: 'Order Timestamp'
+                                text: 'Dealer Name' // Changed X-axis title
                             },
                             stacked: true // Stack bars if you want to see total duration per order
                         },
@@ -464,7 +466,8 @@
             const noTableDataMessage = document.getElementById('no-table-data');
 
             // Clear previous content
-            tableHead.innerHTML = '<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order Timestamp</th>';
+            // Changed header text from 'Order Timestamp' to 'Dealer Name'
+            tableHead.innerHTML = '<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dealer Name</th>';
             tableBody.innerHTML = '';
             noTableDataMessage.classList.add('hidden');
 
@@ -473,8 +476,8 @@
                 return;
             }
 
-            // Determine dynamic headers from the first order's keys (excluding orderTimestamp)
-            const stageKeys = Object.keys(orderWiseDurations[0]).filter(key => key !== 'orderTimestamp');
+            // Determine dynamic headers from the first order's keys (excluding orderTimestamp and dealerName)
+            const stageKeys = Object.keys(orderWiseDurations[0]).filter(key => key !== 'orderTimestamp' && key !== 'dealerName');
             stageKeys.forEach(key => {
                 const th = document.createElement('th');
                 th.scope = 'col';
@@ -488,10 +491,11 @@
                 const row = document.createElement('tr');
                 row.className = 'hover:bg-gray-50';
 
-                const timestampCell = document.createElement('td');
-                timestampCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900';
-                timestampCell.textContent = order.orderTimestamp || 'N/A';
-                row.appendChild(timestampCell);
+                // Display Dealer Name in the first column
+                const dealerNameCell = document.createElement('td');
+                dealerNameCell.className = 'px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900';
+                dealerNameCell.textContent = order.dealerName || 'N/A'; // Use dealerName
+                row.appendChild(dealerNameCell);
 
                 stageKeys.forEach(key => {
                     const cell = document.createElement('td');
@@ -541,6 +545,7 @@
             // Recalculate summary stats for the filtered data
             const newSummaryStats = {};
             const allFilteredStageDurationsMs = {};
+            // Filter out 'orderTimestamp' and 'dealerName' from stageKeys as they are not durations
             const stageKeys = Object.keys(allOrderData.summaryStats); // Use all original stage keys
 
             stageKeys.forEach(key => {
@@ -631,16 +636,19 @@
                 return;
             }
 
-            const headers = ['Order Timestamp'].concat(
+            // Headers for CSV: Dealer Name first, then dynamic stages
+            const headers = ['Dealer Name'].concat(
                 Object.keys(filteredOrderData.orderWiseDurations[0])
-                      .filter(key => key !== 'orderTimestamp')
+                      .filter(key => key !== 'orderTimestamp' && key !== 'dealerName') // Exclude both
                       .map(key => filteredOrderData.stageDescriptions[key] || key.replace(/_/g, ' '))
             );
             let csvContent = headers.join(',') + '\n';
 
             filteredOrderData.orderWiseDurations.forEach(order => {
-                const row = [order.orderTimestamp || 'N/A'];
-                Object.keys(order).filter(key => key !== 'orderTimestamp').forEach(key => {
+                // First column is now Dealer Name
+                const row = [order.dealerName || 'N/A'];
+                // Filter out 'orderTimestamp' and 'dealerName' when pushing other data
+                Object.keys(order).filter(key => key !== 'orderTimestamp' && key !== 'dealerName').forEach(key => {
                     // Ensure N/A values are handled correctly in CSV
                     row.push(order[key] || 'N/A');
                 });
